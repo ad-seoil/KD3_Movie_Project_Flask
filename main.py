@@ -1,6 +1,6 @@
 # _*_ coding: utf-8 _*_
 
-from flask import Flask, jsonify, render_template, request, make_response
+from flask import Flask, jsonify, render_template, request, make_response,abort
 import cv2
 import base64
 import numpy as np
@@ -53,48 +53,50 @@ def rest_img_test():
   output=query1(filestr)
   print('output:',output)
 
+  if output is None:
+      abort(404, description='결과를 찾지 못했습니다.')
   # output = query1(img)
   #
   # 상위 3개의 결과 추출
-  # top_3_results = output[:3]
+  top_3_results = output[:3]
 
   # 각 결과에 대해 영화 정보 가져오기xx
   result_list = []
 
-  if 'result_list' in output:
-      top_results = output['result_list']
-      for i, result in enumerate(top_results[:3]):
-      # for result in top_3_results:
-        predicted_title_with_year = result['label']
-        predicted_title = extract_title_and_year(predicted_title_with_year)
-        score = round(result['score']*100, 2)
+  # if 'result_list' in output:
+  #     top_results = output['result_list']
+  #     for i, result in enumerate(top_results[:3]):
+  for result in top_3_results:
+    predicted_title_with_year = result['label']
+    predicted_title = extract_title_and_year(predicted_title_with_year)
+    score = round(result['score']*100, 2)
 
-        # TMDB에서 영화 정보 가져오기
-        movie_info = get_movie_info(predicted_title)
-        overview = movie_info['overview'] if movie_info else "정보 없음"
-        # 번역
-        translated_overview = translator.translate(overview)
-        # 결과리스트에 append하기
-        result_list.append({'movie_info':movie_info,'overview':translated_overview,'score': score})
+    # TMDB에서 영화 정보 가져오기
+    movie_info = get_movie_info(predicted_title)
+    overview = movie_info['overview'] if movie_info else "정보 없음"
+    # 번역
+    translated_overview = translator.translate(overview)
+    # 결과리스트에 append하기
+    result_list.append({'movie_info':movie_info,'overview':translated_overview,'score': score})
 
-        # 결과 출력
-        if movie_info:
-          print("영화 제목:", movie_info['title'])
-          if movie_info['poster_url']:
-            print("포스터 URL:", movie_info['poster_url'])
-          else:
-            print("포스터 URL을 찾을 수 없습니다.")
-          print("개봉연도:", movie_info['release_date'])
-          print("감독:", movie_info['director'])
-          print("배우:", movie_info['actors'])
-          print("장르:", ', '.join(movie_info['genres']))
-          print("줄거리:", translated_overview)
-          print("트레일러 링크:", movie_info['trailer_url'] if movie_info['trailer_url'] else "트레일러 없음")
-          print(f"유사도:{(score):.2f}%", )
-          print("\n" + "=" * 50 + "\n")
-        else:
-          print(f"{predicted_title}에 대한 영화 정보를 찾을 수 없습니다.")
-          print("\n" + "=" * 50 + "\n")
+    # 결과 출력
+    if movie_info:
+      print("영화 제목:", movie_info['title'])
+      if movie_info['poster_url']:
+        print("포스터 URL:", movie_info['poster_url'])
+      else:
+        print("포스터 URL을 찾을 수 없습니다.")
+      print("개봉연도:", movie_info['release_date'])
+      print("감독:", movie_info['director'])
+      print("배우:", movie_info['actors'])
+      print("장르:", ', '.join(movie_info['genres']))
+      print("줄거리:", translated_overview)
+      print("트레일러 링크:", movie_info['trailer_url'] if movie_info['trailer_url'] else "트레일러 없음")
+      print(f"유사도:{(score):.2f}%", )
+      print("\n" + "=" * 50 + "\n")
+    else:
+      print(f"{predicted_title}에 대한 영화 정보를 찾을 수 없습니다.")
+      print("\n" + "=" * 50 + "\n")
 
   ##############################################
   # 이미지를 SPRING으로 전달하기 위해 base64모듈로 encoding처리
