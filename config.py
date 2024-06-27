@@ -1,0 +1,2 @@
+TMDB_API_KEY = '119e4dc9f5f7b03f012b14d0c9c92598'
+API_TOKEN = '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'
